@@ -15,8 +15,8 @@ int test_ac(unsigned char *text, int nocase, ...)
 {
     va_list va_li;
     ACSM_STRUCT * acsm = NULL;
+    ACSM_MATCH_CONTEXT ctx;
     unsigned char *pat = NULL;
-    int state = 0;
     int idx = 1;
 
     acsm = acsmNew(NULL, NULL, NULL);
@@ -28,13 +28,14 @@ int test_ac(unsigned char *text, int nocase, ...)
         {
             break;
         }
-        acsmAddPattern(acsm, pat, strlen(pat), nocase, 0, 0, 0,
+        acsmAddPatternWithWildcard(acsm, pat, strlen(pat), nocase, 0, 0, 0,
             pat, idx++);
     }
     va_end(va_li);              /* Reset variable arguments.      */
 
     acsmCompile(acsm, NULL, NULL);
-    acsmSearch(acsm, text, strlen(text), (void *)MatchFound, (void *)0, &state);
+    acsmInitMatchContext(acsm, &ctx);
+    acsmSearch(acsm, text, strlen(text), (void *)MatchFound, (void *)0, &ctx);
     acsmFree(acsm);
     return 0;
 }
@@ -42,7 +43,7 @@ int test_ac(unsigned char *text, int nocase, ...)
 int unit_test()
 {
     test_ac("this a simple test", 0, NULL);
-    test_ac("this a simple test", 0, "this", NULL);
+    test_ac("this a simple test", 0, "this", "is", NULL);
     test_ac("this a simple test", 0, "sim", NULL);
     test_ac("this a simple test", 0, "thiz", "sim", NULL);
     test_ac("this a simple test", 0, "this", "sip", NULL);
@@ -50,6 +51,7 @@ int unit_test()
     test_ac("this a simple test", 0, "", NULL);
     test_ac("this a simple test", 0, "TEST", NULL);
     test_ac("ABABababaBaBa", 0, "ababa", NULL);
+    test_ac("Match me with wildcard", 0, "Match * with", NULL);
     return 0;
 }
 

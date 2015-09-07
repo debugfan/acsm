@@ -70,7 +70,9 @@ typedef struct _acsm_pattern {
     int      iid;
     void   * rule_option_tree;
     void   * neg_list;
-
+    int partial_id;
+    int fore_partial_id;
+    int is_last;
 } ACSM_PATTERN;
 
 
@@ -107,7 +109,14 @@ typedef struct {
     void (*optiontreefree)(void **p);
     void (*neg_list_free)(void **p);
 
+    int partial_number;
 }ACSM_STRUCT;
+
+typedef struct {
+    int current_state;
+    int table_size;
+    unsigned char *match_table;
+} ACSM_MATCH_CONTEXT;
 
 /*
 *   Prototypes
@@ -117,7 +126,14 @@ ACSM_STRUCT * acsmNew (void (*userfree)(void *p),
                        void (*neg_list_free)(void **p));
 
 int acsmAddPattern( ACSM_STRUCT * p, unsigned char * pat, int n,
-          int nocase, int offset, int depth, int negative, void * id, int iid );
+          int nocase, int offset, int depth, int negative, void * id, int iid, 
+          int partial_id, int fore_partial_id, int is_last);
+
+int acsmAddPatternWithWildcard(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+    int offset, int depth, int negative, void * id, int iid);
+
+int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx);
+int acsmResetMatchContext(ACSM_MATCH_CONTEXT *match_ctx);
 
 int acsmCompile ( ACSM_STRUCT * acsm,
              int (*build_tree)(void * id, void **existing_tree),
@@ -132,7 +148,7 @@ int acsmCompileWithSnortConf ( struct _SnortConfig *, ACSM_STRUCT * acsm,
 //                 void * data, int* current_state );
 int acsmSearch(ACSM_STRUCT * acsm, unsigned char * T, int n,
     int(*Match)(void * id, int index, void *data),
-    void * data, int* current_state);
+    void * data, ACSM_MATCH_CONTEXT *match_ctx);
 
 void acsmFree ( ACSM_STRUCT * acsm );
 int acsmPatternCount ( ACSM_STRUCT * acsm );
