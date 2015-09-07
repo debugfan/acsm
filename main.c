@@ -11,18 +11,16 @@ MatchFound(unsigned id, int index, void *data)
     return 0;
 }
 
-int test_ac(unsigned char *text, ...)
+int test_ac(unsigned char *text, int nocase, ...)
 {
     va_list va_li;
-    int idx, nocase = 0;
-    ACSM_STRUCT * acsm;
-    unsigned char *pat;
-    idx = 1;
-    pat = NULL;
+    ACSM_STRUCT * acsm = NULL;
+    unsigned char *pat = NULL;
     int state = 0;
+    int idx = 1;
 
     acsm = acsmNew(NULL, NULL, NULL);
-    va_start(va_li, text);     /* Initialize variable arguments. */
+    va_start(va_li, nocase);     /* Initialize variable arguments. */
     for (;;)
     {
         pat = va_arg(va_li, unsigned char *);
@@ -43,14 +41,15 @@ int test_ac(unsigned char *text, ...)
 
 int unit_test()
 {
-    test_ac("this a simple test", NULL);
-    test_ac("this a simple test", "this", NULL);
-    test_ac("this a simple test", "sim", NULL);
-    test_ac("this a simple test", "thiz", "sim", NULL);
-    test_ac("this a simple test", "this", "sip", NULL);
-    test_ac("this a simple test", "this", "sim", NULL);
-    test_ac("this a simple test", "", NULL);
-    test_ac("this a simple test", "test", NULL);
+    test_ac("this a simple test", 0, NULL);
+    test_ac("this a simple test", 0, "this", NULL);
+    test_ac("this a simple test", 0, "sim", NULL);
+    test_ac("this a simple test", 0, "thiz", "sim", NULL);
+    test_ac("this a simple test", 0, "this", "sip", NULL);
+    test_ac("this a simple test", 0, "this", "sim", NULL);
+    test_ac("this a simple test", 0, "", NULL);
+    test_ac("this a simple test", 0, "TEST", NULL);
+    test_ac("ABABababaBaBa", 0, "ababa", NULL);
     return 0;
 }
 

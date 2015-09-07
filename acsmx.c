@@ -85,15 +85,15 @@ static int max_memory = 0;
 *
 */
 static void *
-AC_MALLOC (int n)
+AC_MALLOC(int n)
 {
-  void *p;
-  p = calloc (1,n);
+    void *p;
+    p = calloc(1, n);
 #ifdef DEBUG_AC
-  if (p)
-    max_memory += n;
+    if (p)
+        max_memory += n;
 #endif
-  return p;
+    return p;
 }
 
 
@@ -101,10 +101,10 @@ AC_MALLOC (int n)
 *
 */
 static void
-AC_FREE (void *p)
+AC_FREE(void *p)
 {
-  if (p)
-    free (p);
+    if (p)
+        free(p);
 }
 
 
@@ -113,8 +113,8 @@ AC_FREE (void *p)
 */
 typedef struct _qnode
 {
-  int state;
-   struct _qnode *next;
+    int state;
+    struct _qnode *next;
 }
 QNODE;
 
@@ -123,8 +123,8 @@ QNODE;
 */
 typedef struct _queue
 {
-  QNODE * head, *tail;
-  int count;
+    QNODE * head, *tail;
+    int count;
 }
 QUEUE;
 
@@ -132,10 +132,10 @@ QUEUE;
 *
 */
 static void
-queue_init (QUEUE * s)
+queue_init(QUEUE * s)
 {
-  s->head = s->tail = 0;
-  s->count = 0;
+    s->head = s->tail = 0;
+    s->count = 0;
 }
 
 
@@ -143,26 +143,26 @@ queue_init (QUEUE * s)
 *  Add Tail Item to queue
 */
 static void
-queue_add (QUEUE * s, int state)
+queue_add(QUEUE * s, int state)
 {
-  QNODE * q;
-  if (!s->head)
+    QNODE * q;
+    if (!s->head)
     {
-      q = s->tail = s->head = (QNODE *) AC_MALLOC (sizeof (QNODE));
-      MEMASSERT (q, "queue_add");
-      q->state = state;
-      q->next = 0;
+        q = s->tail = s->head = (QNODE *)AC_MALLOC(sizeof(QNODE));
+        MEMASSERT(q, "queue_add");
+        q->state = state;
+        q->next = 0;
     }
-  else
+    else
     {
-      q = (QNODE *) AC_MALLOC (sizeof (QNODE));
-      MEMASSERT (q, "queue_add");
-      q->state = state;
-      q->next = 0;
-      s->tail->next = q;
-      s->tail = q;
+        q = (QNODE *)AC_MALLOC(sizeof(QNODE));
+        MEMASSERT(q, "queue_add");
+        q->state = state;
+        q->next = 0;
+        s->tail->next = q;
+        s->tail = q;
     }
-  s->count++;
+    s->count++;
 }
 
 
@@ -170,24 +170,24 @@ queue_add (QUEUE * s, int state)
 *  Remove Head Item from queue
 */
 static int
-queue_remove (QUEUE * s)
+queue_remove(QUEUE * s)
 {
-  int state = 0;
-  QNODE * q;
-  if (s->head)
+    int state = 0;
+    QNODE * q;
+    if (s->head)
     {
-      q = s->head;
-      state = q->state;
-      s->head = s->head->next;
-      s->count--;
-      if (!s->head)
-      {
-          s->tail = 0;
-          s->count = 0;
-      }
-      AC_FREE (q);
+        q = s->head;
+        state = q->state;
+        s->head = s->head->next;
+        s->count--;
+        if (!s->head)
+        {
+            s->tail = 0;
+            s->count = 0;
+        }
+        AC_FREE(q);
     }
-  return state;
+    return state;
 }
 
 
@@ -195,9 +195,9 @@ queue_remove (QUEUE * s)
 *
 */
 static int
-queue_count (QUEUE * s)
+queue_count(QUEUE * s)
 {
-  return s->count;
+    return s->count;
 }
 
 
@@ -205,11 +205,11 @@ queue_count (QUEUE * s)
 *
 */
 static void
-queue_free (QUEUE * s)
+queue_free(QUEUE * s)
 {
-  while (queue_count (s))
+    while (queue_count(s))
     {
-      queue_remove (s);
+        queue_remove(s);
     }
 }
 
@@ -222,27 +222,38 @@ static unsigned char xlatcase[256];
 /*
 *
 */
-  static void
-init_xlatcase ()
+static void init_xlatcase()
 {
-  int i;
-  for (i = 0; i < 256; i++)
+#define XLAT_TABLE_INITIAL      0
+#define XLAT_TABLE_READY        1
+    static int xlattable_state = XLAT_TABLE_INITIAL;
+
+    if (xlattable_state == XLAT_TABLE_READY)
     {
-      xlatcase[i] = (unsigned char)toupper (i);
+        return;
+    }
+    else
+    {
+        for (int i = 0; i < 256; i++)
+        {
+            xlatcase[i] = (unsigned char)toupper(i);
+        }
+        xlattable_state = XLAT_TABLE_READY;
     }
 }
 
+#define fast_toupper(c) xlatcase[c]
 
 /*
 *
 */
 static INLINE void
-ConvertCaseEx (unsigned char *d, unsigned char *s, int m)
+ConvertCaseEx(unsigned char *d, unsigned char *s, int m)
 {
-  int i;
-  for (i = 0; i < m; i++)
+    int i;
+    for (i = 0; i < m; i++)
     {
-      d[i] = xlatcase[s[i]];
+        d[i] = xlatcase[s[i]];
     }
 }
 
@@ -251,15 +262,15 @@ ConvertCaseEx (unsigned char *d, unsigned char *s, int m)
 *
 */
 static ACSM_PATTERN *
-CopyMatchListEntry (ACSM_PATTERN * px)
+CopyMatchListEntry(ACSM_PATTERN * px)
 {
-  ACSM_PATTERN * p;
-  p = (ACSM_PATTERN *) AC_MALLOC (sizeof (ACSM_PATTERN));
-  MEMASSERT (p, "CopyMatchListEntry");
-  memcpy (p, px, sizeof (ACSM_PATTERN));
-  px->udata->ref_count++;
-  p->next = 0;
-  return p;
+    ACSM_PATTERN * p;
+    p = (ACSM_PATTERN *)AC_MALLOC(sizeof(ACSM_PATTERN));
+    MEMASSERT(p, "CopyMatchListEntry");
+    memcpy(p, px, sizeof(ACSM_PATTERN));
+    px->udata->ref_count++;
+    p->next = 0;
+    return p;
 }
 
 
@@ -268,50 +279,50 @@ CopyMatchListEntry (ACSM_PATTERN * px)
 *  Insert at front of list.
 */
 static void
-AddMatchListEntry (ACSM_STRUCT * acsm, int state, ACSM_PATTERN * px)
+AddMatchListEntry(ACSM_STRUCT * acsm, int state, ACSM_PATTERN * px)
 {
-  ACSM_PATTERN * p;
-  p = (ACSM_PATTERN *) AC_MALLOC (sizeof (ACSM_PATTERN));
-  MEMASSERT (p, "AddMatchListEntry");
-  memcpy (p, px, sizeof (ACSM_PATTERN));
-  p->next = acsm->acsmStateTable[state].MatchList;
-  acsm->acsmStateTable[state].MatchList = p;
+    ACSM_PATTERN * p;
+    p = (ACSM_PATTERN *)AC_MALLOC(sizeof(ACSM_PATTERN));
+    MEMASSERT(p, "AddMatchListEntry");
+    memcpy(p, px, sizeof(ACSM_PATTERN));
+    p->next = acsm->acsmStateTable[state].MatchList;
+    acsm->acsmStateTable[state].MatchList = p;
 }
 
 
 /*
-   Add Pattern States
+Add Pattern States
 */
 static void
-AddPatternStates (ACSM_STRUCT * acsm, ACSM_PATTERN * p)
+AddPatternStates(ACSM_STRUCT * acsm, ACSM_PATTERN * p)
 {
-  unsigned char *pattern;
-  int state=0, next, n;
-  n = p->n;
-  pattern = p->patrn;
+    unsigned char *pattern;
+    int state = 0, next, n;
+    n = p->n;
+    pattern = p->patrn;
 
     /*
-     *  Match up pattern with existing states
-     */
+    *  Match up pattern with existing states
+    */
     for (; n > 0; pattern++, n--)
     {
-      next = acsm->acsmStateTable[state].NextState[*pattern];
-      if (next == ACSM_FAIL_STATE)
-        break;
-      state = next;
+        next = acsm->acsmStateTable[state].NextState[*pattern];
+        if (next == ACSM_FAIL_STATE)
+            break;
+        state = next;
     }
 
     /*
-     *   Add new states for the rest of the pattern bytes, 1 state per byte
-     */
+    *   Add new states for the rest of the pattern bytes, 1 state per byte
+    */
     for (; n > 0; pattern++, n--)
     {
-      acsm->acsmNumStates++;
-      acsm->acsmStateTable[state].NextState[*pattern] = acsm->acsmNumStates;
-      state = acsm->acsmNumStates;
+        acsm->acsmNumStates++;
+        acsm->acsmStateTable[state].NextState[*pattern] = acsm->acsmNumStates;
+        state = acsm->acsmNumStates;
     }
 
-  AddMatchListEntry (acsm, state, p);
+    AddMatchListEntry(acsm, state, p);
 }
 
 
@@ -319,82 +330,82 @@ AddPatternStates (ACSM_STRUCT * acsm, ACSM_PATTERN * p)
 *   Build Non-Deterministic Finite Automata
 */
 static void
-Build_NFA (ACSM_STRUCT * acsm)
+Build_NFA(ACSM_STRUCT * acsm)
 {
-  int r, s;
-  int i;
-  QUEUE q, *queue = &q;
-  ACSM_PATTERN * mlist=0;
-  ACSM_PATTERN * px=0;
+    int r, s;
+    int i;
+    QUEUE q, *queue = &q;
+    ACSM_PATTERN * mlist = 0;
+    ACSM_PATTERN * px = 0;
 
     /* Init a Queue */
-    queue_init (queue);
+    queue_init(queue);
 
     /* Add the state 0 transitions 1st */
     for (i = 0; i < ALPHABET_SIZE; i++)
     {
-      s = acsm->acsmStateTable[0].NextState[i];
-      if (s)
-      {
-        queue_add (queue, s);
-        acsm->acsmStateTable[s].FailState = 0;
-      }
+        s = acsm->acsmStateTable[0].NextState[i];
+        if (s)
+        {
+            queue_add(queue, s);
+            acsm->acsmStateTable[s].FailState = 0;
+        }
     }
 
     /* Build the fail state transitions for each valid state */
-    while (queue_count (queue) > 0)
+    while (queue_count(queue) > 0)
     {
-      r = queue_remove (queue);
+        r = queue_remove(queue);
 
-      /* Find Final States for any Failure */
-      for (i = 0; i < ALPHABET_SIZE; i++)
-      {
-        int fs, next;
-        if ((s = acsm->acsmStateTable[r].NextState[i]) != ACSM_FAIL_STATE)
+        /* Find Final States for any Failure */
+        for (i = 0; i < ALPHABET_SIZE; i++)
         {
-          queue_add (queue, s);
-          fs = acsm->acsmStateTable[r].FailState;
+            int fs, next;
+            if ((s = acsm->acsmStateTable[r].NextState[i]) != ACSM_FAIL_STATE)
+            {
+                queue_add(queue, s);
+                fs = acsm->acsmStateTable[r].FailState;
 
-          /*
-           *  Locate the next valid state for 'i' starting at s
-           */
-          while ((next=acsm->acsmStateTable[fs].NextState[i]) ==
-                 ACSM_FAIL_STATE)
-          {
-            fs = acsm->acsmStateTable[fs].FailState;
-          }
+                /*
+                *  Locate the next valid state for 'i' starting at s
+                */
+                while ((next = acsm->acsmStateTable[fs].NextState[i]) ==
+                    ACSM_FAIL_STATE)
+                {
+                    fs = acsm->acsmStateTable[fs].FailState;
+                }
 
-          /*
-           *  Update 's' state failure state to point to the next valid state
-           */
-          acsm->acsmStateTable[s].FailState = next;
+                /*
+                *  Update 's' state failure state to point to the next valid state
+                */
+                acsm->acsmStateTable[s].FailState = next;
 
-          /*
-           *  Copy 'next'states MatchList to 's' states MatchList,
-           *  we copy them so each list can be AC_FREE'd later,
-           *  else we could just manipulate pointers to fake the copy.
-           */
-          for (mlist  = acsm->acsmStateTable[next].MatchList;
-               mlist != NULL ;
-               mlist  = mlist->next)
-          {
-              px = CopyMatchListEntry (mlist);
+                /*
+                *  Copy 'next'states MatchList to 's' states MatchList,
+                *  we copy them so each list can be AC_FREE'd later,
+                *  else we could just manipulate pointers to fake the copy.
+                */
+                for (mlist = acsm->acsmStateTable[next].MatchList;
+                    mlist != NULL;
+                    mlist = mlist->next)
+                {
+                    px = CopyMatchListEntry(mlist);
 
-              if( !px )
-              {
-                FatalError("*** Out of memory Initializing Aho Corasick in acsmx.c ****");
-              }
+                    if (!px)
+                    {
+                        FatalError("*** Out of memory Initializing Aho Corasick in acsmx.c ****");
+                    }
 
-              /* Insert at front of MatchList */
-              px->next = acsm->acsmStateTable[s].MatchList;
-              acsm->acsmStateTable[s].MatchList = px;
-          }
+                    /* Insert at front of MatchList */
+                    px->next = acsm->acsmStateTable[s].MatchList;
+                    acsm->acsmStateTable[s].MatchList = px;
+                }
+            }
         }
-      }
     }
 
     /* Clean up the queue */
-    queue_free (queue);
+    queue_free(queue);
 }
 
 
@@ -402,70 +413,70 @@ Build_NFA (ACSM_STRUCT * acsm)
 *   Build Deterministic Finite Automata from NFA
 */
 static void
-Convert_NFA_To_DFA (ACSM_STRUCT * acsm)
+Convert_NFA_To_DFA(ACSM_STRUCT * acsm)
 {
-  int r, s;
-  int i;
-  QUEUE q, *queue = &q;
+    int r, s;
+    int i;
+    QUEUE q, *queue = &q;
 
     /* Init a Queue */
-    queue_init (queue);
+    queue_init(queue);
 
     /* Add the state 0 transitions 1st */
     for (i = 0; i < ALPHABET_SIZE; i++)
     {
-      s = acsm->acsmStateTable[0].NextState[i];
-      if (s)
-      {
-        queue_add (queue, s);
-      }
+        s = acsm->acsmStateTable[0].NextState[i];
+        if (s)
+        {
+            queue_add(queue, s);
+        }
     }
 
     /* Start building the next layer of transitions */
-    while (queue_count (queue) > 0)
+    while (queue_count(queue) > 0)
     {
-      r = queue_remove (queue);
+        r = queue_remove(queue);
 
-      /* State is a branch state */
-      for (i = 0; i < ALPHABET_SIZE; i++)
-      {
-        if ((s = acsm->acsmStateTable[r].NextState[i]) != ACSM_FAIL_STATE)
+        /* State is a branch state */
+        for (i = 0; i < ALPHABET_SIZE; i++)
         {
-            queue_add (queue, s);
+            if ((s = acsm->acsmStateTable[r].NextState[i]) != ACSM_FAIL_STATE)
+            {
+                queue_add(queue, s);
+            }
+            else
+            {
+                acsm->acsmStateTable[r].NextState[i] =
+                    acsm->acsmStateTable[acsm->acsmStateTable[r].FailState].
+                    NextState[i];
+            }
         }
-        else
-        {
-            acsm->acsmStateTable[r].NextState[i] =
-            acsm->acsmStateTable[acsm->acsmStateTable[r].FailState].
-            NextState[i];
-        }
-      }
     }
 
     /* Clean up the queue */
-    queue_free (queue);
+    queue_free(queue);
 }
 
 
 /*
 *
 */
-ACSM_STRUCT * acsmNew (void (*userfree)(void *p),
-                       void (*optiontreefree)(void **p),
-                       void (*neg_list_free)(void **p))
+ACSM_STRUCT * acsmNew(void(*userfree)(void *p),
+    void(*optiontreefree)(void **p),
+    void(*neg_list_free)(void **p))
 {
-  ACSM_STRUCT * p;
-  init_xlatcase ();
-  p = (ACSM_STRUCT *) AC_MALLOC (sizeof (ACSM_STRUCT));
-  MEMASSERT (p, "acsmNew");
-  if (p)
-  {
-    memset (p, 0, sizeof (ACSM_STRUCT));
-    p->userfree              = userfree;
-    p->optiontreefree        = optiontreefree;
-    p->neg_list_free         = neg_list_free;
-  }
-  return p;
+    ACSM_STRUCT * p;
+    init_xlatcase();
+    p = (ACSM_STRUCT *)AC_MALLOC(sizeof(ACSM_STRUCT));
+    MEMASSERT(p, "acsmNew");
+    if (p)
+    {
+        memset(p, 0, sizeof(ACSM_STRUCT));
+        p->userfree = userfree;
+        p->optiontreefree = optiontreefree;
+        p->neg_list_free = neg_list_free;
+    }
+    return p;
 }
 
 
@@ -473,37 +484,37 @@ ACSM_STRUCT * acsmNew (void (*userfree)(void *p),
 *   Add a pattern to the list of patterns for this state machine
 */
 int
-acsmAddPattern (ACSM_STRUCT * p, unsigned char *pat, int n, int nocase,
-            int offset, int depth, int negative, void * id, int iid)
+acsmAddPattern(ACSM_STRUCT * p, unsigned char *pat, int n, int nocase,
+int offset, int depth, int negative, void * id, int iid)
 {
-  ACSM_PATTERN * plist;
-  plist = (ACSM_PATTERN *) AC_MALLOC (sizeof (ACSM_PATTERN));
-  MEMASSERT (plist, "acsmAddPattern");
-  plist->patrn = (unsigned char *) AC_MALLOC (n);
-  ConvertCaseEx (plist->patrn, pat, n);
-  plist->casepatrn = (unsigned char *) AC_MALLOC (n);
-  memcpy (plist->casepatrn, pat, n);
+    ACSM_PATTERN * plist;
+    plist = (ACSM_PATTERN *)AC_MALLOC(sizeof(ACSM_PATTERN));
+    MEMASSERT(plist, "acsmAddPattern");
+    plist->patrn = (unsigned char *)AC_MALLOC(n);
+    ConvertCaseEx(plist->patrn, pat, n);
+    plist->casepatrn = (unsigned char *)AC_MALLOC(n);
+    memcpy(plist->casepatrn, pat, n);
 
-  plist->udata = (ACSM_USERDATA *)AC_MALLOC(sizeof(ACSM_USERDATA));
-  MEMASSERT (plist->udata, "acsmAddPattern");
-  plist->udata->ref_count = 1;
-  plist->udata->id = id;
+    plist->udata = (ACSM_USERDATA *)AC_MALLOC(sizeof(ACSM_USERDATA));
+    MEMASSERT(plist->udata, "acsmAddPattern");
+    plist->udata->ref_count = 1;
+    plist->udata->id = id;
 
-  plist->n = n;
-  plist->nocase = nocase;
-  plist->negative = negative;
-  plist->offset = offset;
-  plist->depth = depth;
-  plist->iid = iid;
-  plist->next = p->acsmPatterns;
-  p->acsmPatterns = plist;
-  p->numPatterns++;
-  return 0;
+    plist->n = n;
+    plist->nocase = nocase;
+    plist->negative = negative;
+    plist->offset = offset;
+    plist->depth = depth;
+    plist->iid = iid;
+    plist->next = p->acsmPatterns;
+    p->acsmPatterns = plist;
+    p->numPatterns++;
+    return 0;
 }
 
-static int acsmBuildMatchStateTrees( ACSM_STRUCT * acsm,
-                                     int (*build_tree)(void * id, void **existing_tree),
-                                     int (*neg_list_func)(void *id, void **list) )
+static int acsmBuildMatchStateTrees(ACSM_STRUCT * acsm,
+    int(*build_tree)(void * id, void **existing_tree),
+    int(*neg_list_func)(void *id, void **list))
 {
     int i, cnt = 0;
     ACSM_PATTERN * mlist;
@@ -511,9 +522,9 @@ static int acsmBuildMatchStateTrees( ACSM_STRUCT * acsm,
     /* Find the states that have a MatchList */
     for (i = 0; i < acsm->acsmMaxStates; i++)
     {
-        for ( mlist=acsm->acsmStateTable[i].MatchList;
-              mlist!=NULL;
-              mlist=mlist->next )
+        for (mlist = acsm->acsmStateTable[i].MatchList;
+            mlist != NULL;
+            mlist = mlist->next)
         {
             if (mlist->udata->id)
             {
@@ -540,9 +551,9 @@ static int acsmBuildMatchStateTrees( ACSM_STRUCT * acsm,
     return cnt;
 }
 
-static int acsmBuildMatchStateTreesWithSnortConf( struct _SnortConfig *sc, ACSM_STRUCT * acsm,
-                                                  int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
-                                                  int (*neg_list_func)(void *id, void **list) )
+static int acsmBuildMatchStateTreesWithSnortConf(struct _SnortConfig *sc, ACSM_STRUCT * acsm,
+    int(*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+    int(*neg_list_func)(void *id, void **list))
 {
     int i, cnt = 0;
     ACSM_PATTERN * mlist;
@@ -550,9 +561,9 @@ static int acsmBuildMatchStateTreesWithSnortConf( struct _SnortConfig *sc, ACSM_
     /* Find the states that have a MatchList */
     for (i = 0; i < acsm->acsmMaxStates; i++)
     {
-        for ( mlist=acsm->acsmStateTable[i].MatchList;
-              mlist!=NULL;
-              mlist=mlist->next )
+        for (mlist = acsm->acsmStateTable[i].MatchList;
+            mlist != NULL;
+            mlist = mlist->next)
         {
             if (mlist->udata->id)
             {
@@ -584,7 +595,7 @@ static int acsmBuildMatchStateTreesWithSnortConf( struct _SnortConfig *sc, ACSM_
 *   Compile State Machine
 */
 static INLINE int
-_acsmCompile (ACSM_STRUCT * acsm)
+_acsmCompile(ACSM_STRUCT * acsm)
 {
     int i, k;
     ACSM_PATTERN * plist;
@@ -596,11 +607,11 @@ _acsmCompile (ACSM_STRUCT * acsm)
         acsm->acsmMaxStates += plist->n;
     }
     acsm->acsmStateTable =
-        (ACSM_STATETABLE *) AC_MALLOC (sizeof (ACSM_STATETABLE) *
-                                        acsm->acsmMaxStates);
-    MEMASSERT (acsm->acsmStateTable, "acsmCompile");
-    memset (acsm->acsmStateTable, 0,
-        sizeof (ACSM_STATETABLE) * acsm->acsmMaxStates);
+        (ACSM_STATETABLE *)AC_MALLOC(sizeof(ACSM_STATETABLE) *
+        acsm->acsmMaxStates);
+    MEMASSERT(acsm->acsmStateTable, "acsmCompile");
+    memset(acsm->acsmStateTable, 0,
+        sizeof(ACSM_STATETABLE) * acsm->acsmMaxStates);
 
     /* Initialize state zero as a branch */
     acsm->acsmNumStates = 0;
@@ -617,7 +628,7 @@ _acsmCompile (ACSM_STRUCT * acsm)
     /* Add each Pattern to the State Table */
     for (plist = acsm->acsmPatterns; plist != NULL; plist = plist->next)
     {
-        AddPatternStates (acsm, plist);
+        AddPatternStates(acsm, plist);
     }
 
     /* Set all failed state transitions to return to the 0'th state */
@@ -630,15 +641,15 @@ _acsmCompile (ACSM_STRUCT * acsm)
     }
 
     /* Build the NFA  */
-    Build_NFA (acsm);
+    Build_NFA(acsm);
 
     /* Convert the NFA to a DFA */
-    Convert_NFA_To_DFA (acsm);
+    Convert_NFA_To_DFA(acsm);
 
     /*
-      printf ("ACSMX-Max Memory: %d bytes, %d states\n", max_memory,
-        acsm->acsmMaxStates);
-     */
+    printf ("ACSMX-Max Memory: %d bytes, %d states\n", max_memory,
+    acsm->acsmMaxStates);
+    */
 
     //Print_DFA( acsm );
 
@@ -646,13 +657,13 @@ _acsmCompile (ACSM_STRUCT * acsm)
 }
 
 int
-acsmCompile (ACSM_STRUCT * acsm,
-             int (*build_tree)(void * id, void **existing_tree),
-             int (*neg_list_func)(void *id, void **list))
+acsmCompile(ACSM_STRUCT * acsm,
+int(*build_tree)(void * id, void **existing_tree),
+int(*neg_list_func)(void *id, void **list))
 {
     int rval;
 
-    if ((rval = _acsmCompile (acsm)))
+    if ((rval = _acsmCompile(acsm)))
         return rval;
 
     if (build_tree && neg_list_func)
@@ -664,13 +675,13 @@ acsmCompile (ACSM_STRUCT * acsm,
 }
 
 int
-acsmCompileWithSnortConf (struct _SnortConfig *sc, ACSM_STRUCT * acsm,
-                          int (*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
-                          int (*neg_list_func)(void *id, void **list))
+acsmCompileWithSnortConf(struct _SnortConfig *sc, ACSM_STRUCT * acsm,
+int(*build_tree)(struct _SnortConfig *, void * id, void **existing_tree),
+int(*neg_list_func)(void *id, void **list))
 {
     int rval;
 
-    if ((rval = _acsmCompile (acsm)))
+    if ((rval = _acsmCompile(acsm)))
         return rval;
 
     if (build_tree && neg_list_func)
@@ -681,16 +692,16 @@ acsmCompileWithSnortConf (struct _SnortConfig *sc, ACSM_STRUCT * acsm,
     return 0;
 }
 
-static unsigned char Tc[64*1024];
+//static unsigned char Tc[64 * 1024];
 
 /*
 *   Search Text or Binary Data for Pattern matches
 */
 int
-acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
-            //int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
-            int(*Match)(void * id, int index, void *data),
-            void *data, int* current_state )
+acsmSearch(ACSM_STRUCT * acsm, unsigned char *Tx, int n,
+//int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
+int(*Match)(void * id, int index, void *data),
+void *data, int* current_state)
 {
     int state = 0;
     ACSM_PATTERN * mlist;
@@ -701,11 +712,13 @@ acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
     int index;
 
     /* Case conversion */
-    ConvertCaseEx (Tc, Tx, n);
-    T = Tc;
+    //ConvertCaseEx(Tc, Tx, n);
+    //T = Tc;
+    //Tend = T + n;
+    T = Tx;
     Tend = T + n;
 
-    if ( !current_state )
+    if (!current_state)
     {
         return 0;
     }
@@ -714,18 +727,28 @@ acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
 
     for (; T < Tend; T++)
     {
-        state = StateTable[state].NextState[*T];
+        state = StateTable[state].NextState[fast_toupper(*T)];
 
-        if( StateTable[state].MatchList != NULL )
+        if (StateTable[state].MatchList != NULL)
         {
             mlist = StateTable[state].MatchList;
-            index = T - mlist->n + 1 - Tc;
-            nfound++;
+            index = T - mlist->n + 1 - Tx;
+            //nfound++;
             //if (Match (mlist->udata->id, mlist->rule_option_tree, index, data, mlist->neg_list) > 0)
-            if (Match(mlist->udata->id, index, data) > 0)
+            //{
+            //    *current_state = state;
+            //    return nfound;
+            //}
+
+            if (0 != mlist->nocase
+                || 0 == memcmp(mlist->casepatrn, Tx + index, mlist->n))
             {
-                *current_state = state;
-                return nfound;
+                nfound++;
+                if (Match(mlist->udata->id, index, data) > 0)
+                {
+                    *current_state = state;
+                    return nfound;
+                }
             }
         }
     }
@@ -738,7 +761,7 @@ acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
 *   Free all memory
 */
 void
-acsmFree (ACSM_STRUCT * acsm)
+acsmFree(ACSM_STRUCT * acsm)
 {
     int i;
     ACSM_PATTERN * mlist, *ilist;
@@ -769,12 +792,12 @@ acsmFree (ACSM_STRUCT * acsm)
                 acsm->neg_list_free(&(ilist->neg_list));
             }
 
-            AC_FREE (ilist);
+            AC_FREE(ilist);
         }
     }
-    AC_FREE (acsm->acsmStateTable);
+    AC_FREE(acsm->acsmStateTable);
     mlist = acsm->acsmPatterns;
-    while(mlist)
+    while (mlist)
     {
         ilist = mlist;
         mlist = mlist->next;
@@ -782,19 +805,19 @@ acsmFree (ACSM_STRUCT * acsm)
         AC_FREE(ilist->casepatrn);
         AC_FREE(ilist);
     }
-    AC_FREE (acsm);
+    AC_FREE(acsm);
 }
 
-int acsmPatternCount ( ACSM_STRUCT * acsm )
+int acsmPatternCount(ACSM_STRUCT * acsm)
 {
     return acsm->numPatterns;
 }
 
 /*
- *
- */
+*
+*/
 /*
-static void Print_DFA( ACSM_STRUCT * acsm )
+static void Print_DFA(ACSM_STRUCT * acsm)
 {
     int k;
     int i;
@@ -802,28 +825,26 @@ static void Print_DFA( ACSM_STRUCT * acsm )
 
     for (k = 0; k < acsm->acsmMaxStates; k++)
     {
-      for (i = 0; i < ALPHABET_SIZE; i++)
-    {
-      next = acsm->acsmStateTable[k].NextState[i];
+        for (i = 0; i < ALPHABET_SIZE; i++)
+        {
+            next = acsm->acsmStateTable[k].NextState[i];
 
-      if( next == 0 || next ==  ACSM_FAIL_STATE )
-      {
-           if( isprint(i) )
-             printf("%3c->%-5d\t",i,next);
-           else
-             printf("%3d->%-5d\t",i,next);
-      }
+            if (next == 0 || next == ACSM_FAIL_STATE)
+            {
+                if (isprint(i))
+                    printf("%3c->%-5d\t", i, next);
+                else
+                    printf("%3d->%-5d\t", i, next);
+            }
+        }
+        printf("\n");
     }
-      printf("\n");
-    }
-
 }
 */
 
-
 int acsmPrintDetailInfo(ACSM_STRUCT * p)
 {
-    if(p)
+    if (p)
         p = p;
     return 0;
 }
@@ -832,9 +853,9 @@ int acsmPrintSummaryInfo(void)
 {
 #ifdef XXXXX
     char * fsa[]={
-      "TRIE",
-      "NFA",
-      "DFA",
+        "TRIE",
+        "NFA",
+        "DFA",
     };
 
     ACSM_STRUCT2 * p = &summary.acsm;
@@ -851,9 +872,9 @@ int acsmPrintSummaryInfo(void)
     LogMessage("| State Density    : %.1f%%\n",100.0*(double)summary.num_transitions/(summary.num_states*p->acsmAlphabetSize));
     LogMessage("| Finite Automatum : %s\n", fsa[p->acsmFSA]);
     if( max_memory < 1024*1024 )
-    LogMessage("| Memory           : %.2fKbytes\n", (float)max_memory/1024 );
+        LogMessage("| Memory           : %.2fKbytes\n", (float)max_memory/1024 );
     else
-    LogMessage("| Memory           : %.2fMbytes\n", (float)max_memory/(1024*1024) );
+        LogMessage("| Memory           : %.2fMbytes\n", (float)max_memory/(1024*1024) );
     LogMessage("+-------------------------------------------------------------\n");
 
 #endif
@@ -871,47 +892,47 @@ unsigned char text[512];
 /*
 *    A Match is found
 */
-  int
+int
 MatchFound (unsigned id, int index, void *data)
 {
-  fprintf (stdout, "%s\n", (char *) id);
-  return 0;
+    fprintf (stdout, "%s\n", (char *) id);
+    return 0;
 }
 
 
 /*
 *
 */
-  int
+int
 main (int argc, char **argv)
 {
-  int i, nocase = 0;
-  ACSM_STRUCT * acsm;
-  if (argc < 3)
+    int i, nocase = 0;
+    ACSM_STRUCT * acsm;
+    if (argc < 3)
 
     {
-      fprintf (stderr,
-        "Usage: acsmx pattern word-1 word-2 ... word-n  -nocase\n");
-      exit (0);
+        fprintf (stderr,
+            "Usage: acsmx pattern word-1 word-2 ... word-n  -nocase\n");
+        exit (0);
     }
-  acsm = acsmNew ();
-  strcpy (text, argv[1]);
-  for (i = 1; i < argc; i++)
-    if (strcmp (argv[i], "-nocase") == 0)
-      nocase = 1;
-  for (i = 2; i < argc; i++)
+    acsm = acsmNew ();
+    strcpy (text, argv[1]);
+    for (i = 1; i < argc; i++)
+        if (strcmp (argv[i], "-nocase") == 0)
+            nocase = 1;
+    for (i = 2; i < argc; i++)
 
     {
-      if (argv[i][0] == '-')
-    continue;
-      acsmAddPattern (acsm, argv[i], strlen (argv[i]), nocase, 0, 0,
+        if (argv[i][0] == '-')
+            continue;
+        acsmAddPattern (acsm, argv[i], strlen (argv[i]), nocase, 0, 0,
             argv[i], i - 2);
     }
-  acsmCompile (acsm);
-  acsmSearch (acsm, text, strlen (text), MatchFound, (void *) 0);
-  acsmFree (acsm);
-  printf ("normal pgm end\n");
-  return (0);
+    acsmCompile (acsm);
+    acsmSearch (acsm, text, strlen (text), MatchFound, (void *) 0);
+    acsmFree (acsm);
+    printf ("normal pgm end\n");
+    return (0);
 }
 #endif /*  */
 
