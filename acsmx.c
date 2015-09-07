@@ -688,7 +688,8 @@ static unsigned char Tc[64*1024];
 */
 int
 acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
-            int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
+            //int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
+            int(*Match)(void * id, int index, void *data),
             void *data, int* current_state )
 {
     int state = 0;
@@ -720,7 +721,8 @@ acsmSearch (ACSM_STRUCT * acsm, unsigned char *Tx, int n,
             mlist = StateTable[state].MatchList;
             index = T - mlist->n + 1 - Tc;
             nfound++;
-            if (Match (mlist->udata->id, mlist->rule_option_tree, index, data, mlist->neg_list) > 0)
+            //if (Match (mlist->udata->id, mlist->rule_option_tree, index, data, mlist->neg_list) > 0)
+            if (Match(mlist->udata->id, index, data) > 0)
             {
                 *current_state = state;
                 return nfound;
