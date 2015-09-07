@@ -66,8 +66,8 @@
 #endif
 
 #include "acsmx.h"
-#include "util.h"
-#include "snort_debug.h"
+//#include "util.h"
+//#include "snort_debug.h"
 
 #ifdef DYNAMIC_PREPROC_CONTEXT
 #include "sf_dynamic_preprocessor.h"
@@ -236,7 +236,7 @@ init_xlatcase ()
 /*
 *
 */
-static inline void
+static INLINE void
 ConvertCaseEx (unsigned char *d, unsigned char *s, int m)
 {
   int i;
@@ -583,7 +583,7 @@ static int acsmBuildMatchStateTreesWithSnortConf( struct _SnortConfig *sc, ACSM_
 /*
 *   Compile State Machine
 */
-static inline int
+static INLINE int
 _acsmCompile (ACSM_STRUCT * acsm)
 {
     int i, k;
