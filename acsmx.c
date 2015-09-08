@@ -484,9 +484,9 @@ ACSM_STRUCT * acsmNew(void(*userfree)(void *p),
 *   Add a pattern to the list of patterns for this state machine
 */
 int
-acsmAddPattern(ACSM_STRUCT * p, unsigned char *pat, int n, int nocase,
+acsmAddPattern(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
 int offset, int depth, int negative, void * id, int iid,
-int fore_partial_id, int partial_id, int is_last)
+int sub_oid, int is_last)
 {
     ACSM_PATTERN * plist;
     plist = (ACSM_PATTERN *)AC_MALLOC(sizeof(ACSM_PATTERN));
@@ -507,32 +507,36 @@ int fore_partial_id, int partial_id, int is_last)
     plist->offset = offset;
     plist->depth = depth;
     plist->iid = iid;
-    plist->next = p->acsmPatterns;
+    plist->next = acsm->acsmPatterns;
 
-    plist->partial_id = partial_id;
-    plist->fore_partial_id = fore_partial_id;
+    plist->main_id = acsm->nMainPatterns;
+    plist->sub_id = sub_oid;
     plist->is_last = is_last;
-
-    p->acsmPatterns = plist;
-    p->numPatterns++;
+    if (is_last != 0)
+    {
+        acsm->nMainPatterns++;
+    }
+    
+    acsm->acsmPatterns = plist;
+    acsm->numPatterns++;
     return 0;
 }
 
 int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx)
 {
-    int table_size;
-    unsigned char *match_table = NULL;
-    table_size = sizeof(unsigned char) * acsm->partial_number;
-    if (table_size > 0)
+    int table_entries;
+    int *match_table = NULL;
+    table_entries = acsm->numPatterns;
+    if (table_entries > 0)
     {
-        match_table = malloc(table_size);
+        match_table = malloc(sizeof(int) * table_entries);
         if (match_table != NULL)
         {
-            memset(match_table, 0, table_size);
+            memset(match_table, 0, sizeof(int) * table_entries);
         }
     }
     match_ctx->current_state = 0;
-    match_ctx->table_size = table_size;
+    match_ctx->table_entries = table_entries;
     match_ctx->match_table = match_table;
 
     return 0;
@@ -540,17 +544,18 @@ int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx)
 
 int acsmResetMatchContext(ACSM_MATCH_CONTEXT *match_ctx)
 {
-    if (match_ctx->table_size > 0 && match_ctx->match_table != NULL)
+    if (match_ctx->match_table != NULL
+        && match_ctx->table_entries > 0)
     {
-        memset(match_ctx->match_table, 0, match_ctx->table_size);
+        memset(match_ctx->match_table, 0, sizeof(int) * match_ctx->table_entries);
     }
     match_ctx->current_state = 0;
     return 0;
 }
 
 int
-acsmAddPatternWithWildcard(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
-int offset, int depth, int negative, void * id, int iid)
+acsmAddPatternExtended(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+int offset, int depth, int negative, void *id, int iid)
 {
 #define PARSE_MATCHING_WORD         0
 #define PARSE_END_WORD              1
@@ -558,8 +563,7 @@ int offset, int depth, int negative, void * id, int iid)
     unsigned char *p = pat;
     int part_start = 0;
     int part_end = 0;
-    int fore_part_id = 0;
-    int part_id = acsm->partial_number;
+    int sub_id = 0;
     int is_last = 0;
     int in_escape = 0;
     for (int i = 0; i < n; i++)
@@ -583,12 +587,11 @@ int offset, int depth, int negative, void * id, int iid)
         switch (parse_state)
         {
         case PARSE_MATCHING_WORD:
-            if (p[i] == '*' || p[i] == '?' || i == n - 1)
+            if (p[i] == '*' || i == n - 1)
             {
                 part_end = i;
                 if (part_end > part_start)
                 {
-                    part_id++;
                     acsmAddPattern(acsm,
                         p + part_start,
                         part_end - part_start,
@@ -597,17 +600,15 @@ int offset, int depth, int negative, void * id, int iid)
                         negative,
                         id,
                         iid,
-                        fore_part_id,
-                        part_id,
+                        sub_id++,
                         is_last);
-                    fore_part_id = part_id;
                 }
 
                 parse_state = PARSE_END_WORD;
             }
             break;
         case PARSE_END_WORD:
-            if (p[i] != '*' && p[i] != '?')
+            if (p[i] != '*')
             {
                 part_start = i;
                 parse_state = PARSE_MATCHING_WORD;
@@ -622,8 +623,6 @@ int offset, int depth, int negative, void * id, int iid)
             break;
         }
     }
-
-    acsm->partial_number = part_id;
 
     return 0;
 }
@@ -823,7 +822,7 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
     ACSM_PATTERN * mlist;
     unsigned char *Tend;
     ACSM_STATETABLE * StateTable = acsm->acsmStateTable;
-    unsigned char *partial_table = NULL;
+    int *match_table;
     int nfound = 0;
     unsigned char *T;
     int index;
@@ -841,7 +840,7 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
     }
 
     state = match_ctx->current_state;
-    partial_table = match_ctx->match_table;
+    match_table = match_ctx->match_table;
 
     for (; T < Tend; T++)
     {
@@ -861,21 +860,12 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
             for (mlist = StateTable[state].MatchList; mlist != NULL;
                 mlist = mlist->next)
             {
-                if (mlist->fore_partial_id != 0)
+                if (mlist->sub_id != match_table[mlist->main_id])
                 {
-                    if (partial_table[mlist->fore_partial_id] != 0)
-                    {
-                        partial_table[mlist->partial_id] = 1;
-                    }
-                    else
-                    {
-                        continue;
-                    }
+                    continue;
                 }
-                else
-                {
-                    partial_table[mlist->partial_id] = 1;
-                }
+
+                match_table[mlist->main_id]++;
 
                 if (mlist->is_last == 0)
                 {

@@ -28,7 +28,7 @@ int test_ac(unsigned char *text, int nocase, ...)
         {
             break;
         }
-        acsmAddPatternWithWildcard(acsm, pat, strlen(pat), nocase, 0, 0, 0,
+        acsmAddPatternExtended(acsm, pat, strlen(pat), nocase, 0, 0, 0,
             pat, idx++);
     }
     va_end(va_li);              /* Reset variable arguments.      */
@@ -50,8 +50,10 @@ int unit_test()
     test_ac("this a simple test", 0, "this", "sim", NULL);
     test_ac("this a simple test", 0, "", NULL);
     test_ac("this a simple test", 0, "TEST", NULL);
+    test_ac("this a simple test", 1, "TEST", NULL);
     test_ac("ABABababaBaBa", 0, "ababa", NULL);
     test_ac("Match me with wildcard", 0, "Match * with", NULL);
+    test_ac("Match me with wildcard", 0, "Match \\* with", NULL);
     return 0;
 }
 
@@ -89,7 +91,7 @@ main(int argc, char **argv)
     {
         if (argv[i][0] == '-')
             continue;
-        acsmAddPattern(acsm, argv[i], strlen(argv[i]), nocase, 0, 0, 0,
+        acsmAddPatternExtended(acsm, argv[i], strlen(argv[i]), nocase, 0, 0, 0,
             argv[i], i - 2);
     }
     acsmCompile(acsm, NULL, NULL);

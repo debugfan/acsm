@@ -49,8 +49,7 @@
 
 #define ACSM_FAIL_STATE   -1
 
-typedef struct _acsm_userdata
-{
+typedef struct _acsm_userdata {
     uint32_t ref_count;
     void *id;
 
@@ -70,8 +69,8 @@ typedef struct _acsm_pattern {
     int      iid;
     void   * rule_option_tree;
     void   * neg_list;
-    int partial_id;
-    int fore_partial_id;
+    int main_id;
+    int sub_id;
     int is_last;
 } ACSM_PATTERN;
 
@@ -87,7 +86,7 @@ typedef struct  {
     /* List of patterns that end here, if any */
     ACSM_PATTERN *MatchList;
 
-}ACSM_STATETABLE;
+} ACSM_STATETABLE;
 
 
 /*
@@ -109,13 +108,14 @@ typedef struct {
     void (*optiontreefree)(void **p);
     void (*neg_list_free)(void **p);
 
-    int partial_number;
-}ACSM_STRUCT;
+    int nMainPatterns;
+
+} ACSM_STRUCT;
 
 typedef struct {
     int current_state;
-    int table_size;
-    unsigned char *match_table;
+    int table_entries;
+    int *match_table;
 } ACSM_MATCH_CONTEXT;
 
 /*
@@ -127,9 +127,9 @@ ACSM_STRUCT * acsmNew (void (*userfree)(void *p),
 
 int acsmAddPattern( ACSM_STRUCT * p, unsigned char * pat, int n,
           int nocase, int offset, int depth, int negative, void * id, int iid, 
-          int partial_id, int fore_partial_id, int is_last);
+          int sub_oid, int is_last);
 
-int acsmAddPatternWithWildcard(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+int acsmAddPatternExtended(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
     int offset, int depth, int negative, void * id, int iid);
 
 int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx);
