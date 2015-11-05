@@ -118,6 +118,8 @@ typedef struct {
     int *match_table;
 } ACSM_MATCH_CONTEXT;
 
+typedef int acsm_match_state_t;
+
 /*
 *   Prototypes
 */
@@ -132,8 +134,8 @@ int acsmAddPattern( ACSM_STRUCT * p, unsigned char * pat, int n,
 int acsmAddPatternExtended(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
     int offset, int depth, int negative, void * id, int iid);
 
-int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx);
-int acsmResetMatchContext(ACSM_MATCH_CONTEXT *match_ctx);
+int acsmGetMatchTableNumbers(ACSM_STRUCT *acsm);
+int acsmResetMatchTable(ACSM_STRUCT *acsm, int *match_table);
 
 int acsmCompile ( ACSM_STRUCT * acsm,
              int (*build_tree)(void * id, void **existing_tree),
@@ -148,7 +150,8 @@ int acsmCompileWithSnortConf ( struct _SnortConfig *, ACSM_STRUCT * acsm,
 //                 void * data, int* current_state );
 int acsmSearch(ACSM_STRUCT * acsm, unsigned char * T, int n,
     int(*Match)(void * id, int index, void *data),
-    void * data, ACSM_MATCH_CONTEXT *match_ctx);
+    void * data, 
+    int *current_state, int *match_table);
 
 void acsmFree ( ACSM_STRUCT * acsm );
 int acsmPatternCount ( ACSM_STRUCT * acsm );

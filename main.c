@@ -15,9 +15,9 @@ int test_ac(unsigned char *text, int nocase, ...)
 {
     va_list va_li;
     ACSM_STRUCT * acsm = NULL;
-    ACSM_MATCH_CONTEXT ctx;
     unsigned char *pat = NULL;
     int idx = 1;
+    int *match_table;
 
     acsm = acsmNew(NULL, NULL, NULL);
     va_start(va_li, nocase);     /* Initialize variable arguments. */
@@ -34,8 +34,9 @@ int test_ac(unsigned char *text, int nocase, ...)
     va_end(va_li);              /* Reset variable arguments.      */
 
     acsmCompile(acsm, NULL, NULL);
-    acsmInitMatchContext(acsm, &ctx);
-    acsmSearch(acsm, text, strlen(text), (void *)MatchFound, (void *)0, &ctx);
+    match_table = malloc(sizeof(int) * acsmGetMatchTableNumbers(acsm));
+    acsmResetMatchTable(acsm, match_table);
+    acsmSearch(acsm, text, strlen(text), (void *)MatchFound, (void *)0, NULL, match_table);
     acsmFree(acsm);
     return 0;
 }

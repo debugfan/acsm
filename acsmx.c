@@ -522,34 +522,20 @@ int sub_oid, int is_last)
     return 0;
 }
 
-int acsmInitMatchContext(ACSM_STRUCT *acsm, ACSM_MATCH_CONTEXT *match_ctx)
+int acsmGetMatchTableNumbers(ACSM_STRUCT *acsm)
 {
-    int table_entries;
-    int *match_table = NULL;
-    table_entries = acsm->numPatterns;
-    if (table_entries > 0)
-    {
-        match_table = malloc(sizeof(int) * table_entries);
-        if (match_table != NULL)
-        {
-            memset(match_table, 0, sizeof(int) * table_entries);
-        }
-    }
-    match_ctx->current_state = 0;
-    match_ctx->table_entries = table_entries;
-    match_ctx->match_table = match_table;
-
-    return 0;
+    return acsm->nMainPatterns;
 }
 
-int acsmResetMatchContext(ACSM_MATCH_CONTEXT *match_ctx)
+int acsmResetMatchTable(ACSM_STRUCT *acsm, int *match_table)
 {
-    if (match_ctx->match_table != NULL
-        && match_ctx->table_entries > 0)
+    int avail_num;
+    avail_num = acsm->nMainPatterns;
+    if (avail_num > 0)
     {
-        memset(match_ctx->match_table, 0, sizeof(int) * match_ctx->table_entries);
+        memset(match_table, 0, sizeof(int) * avail_num);
     }
-    match_ctx->current_state = 0;
+
     return 0;
 }
 
@@ -816,13 +802,13 @@ int
 acsmSearch(ACSM_STRUCT * acsm, unsigned char *Tx, int n,
 //int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
 int(*Match)(void * id, int index, void *data),
-void *data, ACSM_MATCH_CONTEXT *match_ctx)
+void *data, 
+int *current_state, int *match_table)
 {
     int state = 0;
     ACSM_PATTERN * mlist;
     unsigned char *Tend;
     ACSM_STATETABLE * StateTable = acsm->acsmStateTable;
-    int *match_table;
     int nfound = 0;
     unsigned char *T;
     int index;
@@ -834,13 +820,14 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
     T = Tx;
     Tend = T + n;
 
-    if (match_ctx == NULL)
+    if (current_state != NULL)
     {
-        return 0;
+        state = *current_state;
     }
-
-    state = match_ctx->current_state;
-    match_table = match_ctx->match_table;
+    else
+    {
+        state = 0;
+    }
 
     for (; T < Tend; T++)
     {
@@ -860,12 +847,14 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
             for (mlist = StateTable[state].MatchList; mlist != NULL;
                 mlist = mlist->next)
             {
-                if (mlist->sub_id != match_table[mlist->main_id])
+                if (match_table != NULL)
                 {
-                    continue;
+                    if (mlist->sub_id != match_table[mlist->main_id])
+                    {
+                        continue;
+                    }
+                    match_table[mlist->main_id]++;
                 }
-
-                match_table[mlist->main_id]++;
 
                 if (mlist->is_last == 0)
                 {
@@ -883,14 +872,20 @@ void *data, ACSM_MATCH_CONTEXT *match_ctx)
                 nfound++;
                 if (Match(mlist->udata->id, index, data) > 0)
                 {
-                    match_ctx->current_state = state;
+                    if (current_state != NULL)
+                    {
+                        *current_state = state;
+                    }
                     return nfound;
                 }
             }
         }
     }
     
-    match_ctx->current_state = state;
+    if (current_state != NULL)
+    {
+        *current_state = state;
+    }
     return nfound;
 }
 
