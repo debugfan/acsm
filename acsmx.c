@@ -234,7 +234,8 @@ static void init_xlatcase()
     }
     else
     {
-        for (int i = 0; i < 256; i++)
+        int i;
+        for (i = 0; i < 256; i++)
         {
             xlatcase[i] = (unsigned char)toupper(i);
         }
@@ -248,7 +249,7 @@ static void init_xlatcase()
 *
 */
 static INLINE void
-ConvertCaseEx(unsigned char *d, unsigned char *s, int m)
+ConvertCaseEx(unsigned char *d, const unsigned char *s, int m)
 {
     int i;
     for (i = 0; i < m; i++)
@@ -484,7 +485,7 @@ ACSM_STRUCT * acsmNew(void(*userfree)(void *p),
 *   Add a pattern to the list of patterns for this state machine
 */
 int
-acsmAddPattern(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+acsmAddPattern(ACSM_STRUCT * acsm, const unsigned char *pat, int n, int nocase,
 int offset, int depth, int negative, void * id, int iid,
 int sub_oid, int is_last)
 {
@@ -540,19 +541,21 @@ int acsmResetMatchTable(ACSM_STRUCT *acsm, int *match_table)
 }
 
 int
-acsmAddPatternExtended(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+acsmAddPatternExtended(ACSM_STRUCT * acsm, const unsigned char *pat, int n, int nocase,
 int offset, int depth, int negative, void *id, int iid)
 {
 #define PARSE_MATCHING_WORD         0
 #define PARSE_END_WORD              1
     int parse_state = PARSE_MATCHING_WORD;
-    unsigned char *p = pat;
+    const unsigned char *p = pat;
     int part_start = 0;
     int part_end = 0;
     int sub_id = 0;
     int is_last = 0;
     int in_escape = 0;
-    for (int i = 0; i < n; i++)
+    int i;
+    int add_word = 0;
+    for (i = 0; i < n; i++)
     {
         if (i == n - 1)
         {
@@ -573,15 +576,29 @@ int offset, int depth, int negative, void *id, int iid)
         switch (parse_state)
         {
         case PARSE_MATCHING_WORD:
-            if (p[i] == '*' || i == n - 1)
+            if (p[i] == '*')
             {
                 part_end = i;
+                add_word = 1;
+            }
+            else
+            {
+                if (is_last != 0)
+                {
+                    part_end = i + 1;
+                    add_word = 1;
+                }
+            }
+
+            if (add_word != 0)
+            {
                 if (part_end > part_start)
                 {
                     acsmAddPattern(acsm,
                         p + part_start,
                         part_end - part_start,
-                        nocase, offset,
+                        nocase, 
+                        offset,
                         depth,
                         negative,
                         id,
@@ -591,6 +608,8 @@ int offset, int depth, int negative, void *id, int iid)
                 }
 
                 parse_state = PARSE_END_WORD;
+
+                add_word = 0;
             }
             break;
         case PARSE_END_WORD:
@@ -799,18 +818,18 @@ int(*neg_list_func)(void *id, void **list))
 *   Search Text or Binary Data for Pattern matches
 */
 int
-acsmSearch(ACSM_STRUCT * acsm, unsigned char *Tx, int n,
+acsmSearch(ACSM_STRUCT * acsm, const unsigned char *Tx, int n,
 //int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
-int(*Match)(void * id, int index, void *data),
+int(*match_func)(const unsigned char *pat, int pat_len, void *id, int index, void *data),
 void *data, 
 int *current_state, int *match_table)
 {
     int state = 0;
     ACSM_PATTERN * mlist;
-    unsigned char *Tend;
+    const unsigned char *T;
+    const unsigned char *Tend;
     ACSM_STATETABLE * StateTable = acsm->acsmStateTable;
     int nfound = 0;
-    unsigned char *T;
     int index;
 
     /* Case conversion */
@@ -862,15 +881,25 @@ int *current_state, int *match_table)
                 }
 
                 index = T - mlist->n + 1 - Tx;
-
-                if (0 == mlist->nocase
-                    && 0 != memcmp(mlist->casepatrn, Tx + index, mlist->n))
+                
+                if (0 == mlist->nocase)
                 {
-                    continue;
+                    if (index >= 0)
+                    {
+                        if (0 != memcmp(mlist->casepatrn, Tx + index, mlist->n))
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        // Not supported case search on segments
+                    }
                 }
 
                 nfound++;
-                if (Match(mlist->udata->id, index, data) > 0)
+                if (match_func(mlist->casepatrn, mlist->n,
+                    mlist->udata->id, index, data) > 0)
                 {
                     if (current_state != NULL)
                     {

@@ -44,7 +44,6 @@
 *   Prototypes
 */
 
-
 #define ALPHABET_SIZE    256
 
 #define ACSM_FAIL_STATE   -1
@@ -110,12 +109,12 @@ typedef struct {
 
     int nMainPatterns;
 
+    int nMaxPatternLength;
 } ACSM_STRUCT;
 
 typedef struct {
-    int current_state;
-    int table_entries;
     int *match_table;
+    int *match_cache;
 } ACSM_MATCH_CONTEXT;
 
 typedef int acsm_match_state_t;
@@ -127,11 +126,11 @@ ACSM_STRUCT * acsmNew (void (*userfree)(void *p),
                        void (*optiontreefree)(void **p),
                        void (*neg_list_free)(void **p));
 
-int acsmAddPattern( ACSM_STRUCT * p, unsigned char * pat, int n,
+int acsmAddPattern( ACSM_STRUCT * p, const unsigned char *pat, int n,
           int nocase, int offset, int depth, int negative, void * id, int iid, 
           int sub_oid, int is_last);
 
-int acsmAddPatternExtended(ACSM_STRUCT * acsm, unsigned char *pat, int n, int nocase,
+int acsmAddPatternExtended(ACSM_STRUCT * acsm, const unsigned char *pat, int n, int nocase,
     int offset, int depth, int negative, void * id, int iid);
 
 int acsmGetMatchTableNumbers(ACSM_STRUCT *acsm);
@@ -148,8 +147,8 @@ int acsmCompileWithSnortConf ( struct _SnortConfig *, ACSM_STRUCT * acsm,
 //int acsmSearch ( ACSM_STRUCT * acsm,unsigned char * T, int n,
 //                 int (*Match)(void * id, void *tree, int index, void *data, void *neg_list),
 //                 void * data, int* current_state );
-int acsmSearch(ACSM_STRUCT * acsm, unsigned char * T, int n,
-    int(*Match)(void * id, int index, void *data),
+int acsmSearch(ACSM_STRUCT * acsm, const unsigned char * T, int n,
+    int(*match_func)(const unsigned char *pat, int n, void * id, int index, void *data),
     void * data, 
     int *current_state, int *match_table);
 

@@ -5,7 +5,7 @@
 *    A Match is found
 */
 int
-MatchFound(unsigned id, int index, void *data)
+MatchFound(const unsigned char *pat, int n, void *id, int index, void *data)
 {
     fprintf(stdout, "%s\n", (char *)id);
     return 0;
@@ -18,6 +18,7 @@ int test_ac(unsigned char *text, int nocase, ...)
     unsigned char *pat = NULL;
     int idx = 1;
     int *match_table;
+    int state = 0;
 
     acsm = acsmNew(NULL, NULL, NULL);
     va_start(va_li, nocase);     /* Initialize variable arguments. */
@@ -36,7 +37,8 @@ int test_ac(unsigned char *text, int nocase, ...)
     acsmCompile(acsm, NULL, NULL);
     match_table = malloc(sizeof(int) * acsmGetMatchTableNumbers(acsm));
     acsmResetMatchTable(acsm, match_table);
-    acsmSearch(acsm, text, strlen(text), (void *)MatchFound, (void *)0, NULL, match_table);
+    acsmSearch(acsm, text, 2, (void *)MatchFound, (void *)0, &state, match_table);
+    acsmSearch(acsm, text + 2, strlen(text) - 2, (void *)MatchFound, (void *)0, &state, match_table);
     acsmFree(acsm);
     return 0;
 }
@@ -52,9 +54,10 @@ int unit_test()
     test_ac("this a simple test", 0, "", NULL);
     test_ac("this a simple test", 0, "TEST", NULL);
     test_ac("this a simple test", 1, "TEST", NULL);
-    test_ac("ABABababaBaBa", 0, "ababa", NULL);
+    test_ac("ABABababaBaBa", 0, 0, "ababa", NULL);
     test_ac("Match me with wildcard", 0, "Match * with", NULL);
     test_ac("Match me with wildcard", 0, "Match \\* with", NULL);
+    test_ac("ababa", 0, "ababa", NULL);
     return 0;
 }
 
