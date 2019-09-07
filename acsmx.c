@@ -299,8 +299,8 @@ AddPatternStates(ACSM_STRUCT * acsm, ACSM_PATTERN * p)
 {
     unsigned char *pattern;
     int state = 0, next, n;
-    n = p->n;
-    pattern = p->patrn;
+    n = p->patrn_cut;
+    pattern = p->patrn + p->patrn_off;
 
     /*
     *  Match up pattern with existing states
@@ -480,6 +480,33 @@ ACSM_STRUCT * acsmNew(void(*userfree)(void *p),
     return p;
 }
 
+int cutPattern(ACSM_PATTERN *plist, const char *p, int n)
+{
+	int i, l, r;
+
+	for (i = n - 1; i >= 0; i--)
+	{
+		if (*(p + i) != '?')
+		{
+			break;
+		}
+	}
+	r = i + 1;
+
+	for (; i >= 0; i--)
+	{
+		if (*(p + i) == '?')
+		{
+			break;
+		}
+	}
+	l = i + 1;
+
+	plist->patrn_off = l;
+	plist->patrn_cut = r - l;
+
+	return r - l;
+}
 
 /*
 *   Add a pattern to the list of patterns for this state machine
@@ -494,6 +521,7 @@ int sub_oid, int is_last)
     MEMASSERT(plist, "acsmAddPattern");
     plist->patrn = (unsigned char *)AC_MALLOC(n);
     ConvertCaseEx(plist->patrn, pat, n);
+	cutPattern(plist, pat, n);
     plist->casepatrn = (unsigned char *)AC_MALLOC(n);
     memcpy(plist->casepatrn, pat, n);
 
@@ -724,7 +752,7 @@ _acsmCompile(ACSM_STRUCT * acsm)
     acsm->acsmMaxStates = 1;
     for (plist = acsm->acsmPatterns; plist != NULL; plist = plist->next)
     {
-        acsm->acsmMaxStates += plist->n;
+        acsm->acsmMaxStates += plist->patrn_cut;
     }
     acsm->acsmStateTable =
         (ACSM_STATETABLE *)AC_MALLOC(sizeof(ACSM_STATETABLE) *
@@ -813,6 +841,33 @@ int(*neg_list_func)(void *id, void **list))
 }
 
 //static unsigned char Tc[64 * 1024];
+int patcmp(const char *pat, const char *s, int len)
+{
+	for (int i = 0; i < len; i++)
+	{
+		if (pat[i] == '?')
+		{
+			continue;
+		}
+		else
+		{
+			if (pat[i] == s[i])
+			{
+				continue;
+			}
+			else if (pat[i] > s[i])
+			{
+				return 1;
+			}
+			else
+			{
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
 
 /*
 *   Search Text or Binary Data for Pattern matches
@@ -880,13 +935,16 @@ int *current_state, int *match_table)
                     continue;
                 }
 
-                index = T - mlist->n + 1 - Tx;
+				index = T - (mlist->patrn_off + mlist->patrn_cut) + 1 - Tx;
                 
-                if (0 == mlist->nocase)
+				if (0 == mlist->nocase || mlist->patrn_cut < mlist->n)
                 {
-                    if (index >= 0)
+					const unsigned char *right;
+					right = T + 1 - (mlist->patrn_off + mlist->patrn_cut) + mlist->n;
+					if (index >= 0 && right <= Tend)
                     {
-                        if (0 != memcmp(mlist->casepatrn, Tx + index, mlist->n))
+                        //if (0 != memcmp(mlist->casepatrn, Tx + index, mlist->n))
+						if (0 != patcmp(mlist->casepatrn, Tx + index, mlist->n))
                         {
                             continue;
                         }
@@ -894,6 +952,7 @@ int *current_state, int *match_table)
                     else
                     {
                         // Not supported case search on segments
+						continue;
                     }
                 }
 

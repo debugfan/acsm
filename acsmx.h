@@ -71,6 +71,8 @@ typedef struct _acsm_pattern {
     int main_id;
     int sub_id;
     int is_last;
+	int patrn_off;
+	int patrn_cut;
 } ACSM_PATTERN;
 
 

@@ -45,6 +45,8 @@ int test_ac(unsigned char *text, int nocase, ...)
 
 int unit_test()
 {
+	test_ac("this a simple test", 0, "s?m??", NULL);
+	test_ac("this a simple test", 0, "tes??", NULL);
     test_ac("this a simple test", 0, NULL);
     test_ac("this a simple test", 0, "this", "is", NULL);
     test_ac("this a simple test", 0, "sim", NULL);
